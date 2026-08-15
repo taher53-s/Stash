@@ -269,26 +269,34 @@ struct ItemCardView: View {
             
             // Hover action badges
             if isHovered {
-                HStack(spacing: 3) {
+                HStack(spacing: 4) {
                     Button(action: onPreview) {
                         Image(systemName: "eye.fill")
-                            .font(.system(size: 9))
-                            .foregroundColor(.primary.opacity(0.8))
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundColor(.white)
                             .frame(width: 18, height: 18)
-                            .background(Circle().fill(Color.white).shadow(color: .black.opacity(0.15), radius: 2, x: 0, y: 1))
+                            .background(
+                                Circle()
+                                    .fill(Color.black.opacity(0.75))
+                                    .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
+                            )
                     }
                     .buttonStyle(.plain)
                     
                     Button(action: onRemove) {
                         Image(systemName: "xmark")
                             .font(.system(size: 9, weight: .bold))
-                            .foregroundColor(.primary.opacity(0.8))
+                            .foregroundColor(.white)
                             .frame(width: 18, height: 18)
-                            .background(Circle().fill(Color.white).shadow(color: .black.opacity(0.15), radius: 2, x: 0, y: 1))
+                            .background(
+                                Circle()
+                                    .fill(Color.black.opacity(0.75))
+                                    .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
+                            )
                     }
                     .buttonStyle(.plain)
                 }
-                .offset(x: 4, y: -4)
+                .offset(x: 2, y: -2)
                 .transition(.scale.combined(with: .opacity))
             }
         }

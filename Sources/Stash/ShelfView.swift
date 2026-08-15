@@ -3,27 +3,72 @@ import UniformTypeIdentifiers
 import QuickLook
 
 struct ShelfView: View {
-    let manager: ShelfWindowManager
+    @ObservedObject var manager: ShelfWindowManager
     @State private var items: [StashedItem] = []
     @State private var isTargeted = false
     @State private var previewUrl: URL?
+    @State private var isEditingTitle = false
+    @State private var editableTitle = ""
     
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 8) {
             // Header Bar
-            HStack {
+            HStack(spacing: 8) {
                 HStack(spacing: 6) {
                     Image(systemName: "tray.full.fill")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(.accentColor)
-                    Text(manager.title)
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.accentColor, .purple.opacity(0.8)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                    
+                    if isEditingTitle {
+                        TextField("Shelf Name", text: $editableTitle, onCommit: {
+                            manager.updateTitle(editableTitle)
+                            isEditingTitle = false
+                        })
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
                         .foregroundColor(.primary)
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 2)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Color.primary.opacity(0.1))
+                        )
+                        .frame(maxWidth: 110)
+                    } else {
+                        HStack(spacing: 4) {
+                            Text(manager.title)
+                                .font(.system(size: 12, weight: .bold, design: .rounded))
+                                .foregroundColor(.primary)
+                                .lineLimit(1)
+                            
+                            Image(systemName: "pencil")
+                                .font(.system(size: 9, weight: .medium))
+                                .foregroundColor(.secondary.opacity(0.5))
+                        }
+                        .onTapGesture {
+                            editableTitle = manager.title
+                            isEditingTitle = true
+                        }
+                        .help("Click to rename shelf")
+                    }
                 }
                 
                 Spacer()
                 
                 if !items.isEmpty {
+                    Text("\(items.count)")
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Capsule().fill(Color.primary.opacity(0.06)))
+                    
                     Button(action: {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                             items.removeAll()
@@ -36,7 +81,6 @@ struct ShelfView: View {
                             .foregroundColor(.secondary)
                     }
                     .buttonStyle(.plain)
-                    .padding(.trailing, 4)
                 }
                 
                 Button(action: {
@@ -48,7 +92,7 @@ struct ShelfView: View {
                 }) {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 14))
-                        .foregroundColor(.secondary.opacity(0.8))
+                        .foregroundColor(.secondary.opacity(0.7))
                 }
                 .buttonStyle(.plain)
             }
@@ -61,16 +105,33 @@ struct ShelfView: View {
                     Spacer()
                     ZStack {
                         Circle()
-                            .fill(Color.primary.opacity(0.04))
-                            .frame(width: 54, height: 54)
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color.accentColor.opacity(0.12), Color.purple.opacity(0.06)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 56, height: 56)
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                            )
+                        
                         Image(systemName: "tray.and.arrow.down.fill")
-                            .font(.system(size: 24, weight: .medium))
-                            .foregroundColor(.secondary.opacity(0.8))
+                            .font(.system(size: 22, weight: .medium))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.accentColor, .purple.opacity(0.9)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
                     }
                     
                     Text("Drop Files Here")
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
-                        .foregroundColor(.secondary)
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundColor(.primary.opacity(0.85))
                     
                     Text("Shake cursor anytime to stash")
                         .font(.system(size: 10))
@@ -100,27 +161,37 @@ struct ShelfView: View {
         .frame(width: 240, height: 260)
         .background(
             ZStack {
+                // Base frosted glass material
                 Rectangle()
                     .fill(.ultraThinMaterial)
                 
+                // Subtle liquid light background ambient glow
                 LinearGradient(
-                    colors: [Color.white.opacity(0.18), Color.white.opacity(0.03)],
+                    colors: [
+                        Color.white.opacity(0.22),
+                        Color.accentColor.opacity(0.06),
+                        Color.purple.opacity(0.04)
+                    ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
             }
         )
-        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .stroke(
-                    isTargeted
-                    ? Color.accentColor
-                    : Color.white.opacity(0.25),
+                    LinearGradient(
+                        colors: isTargeted
+                        ? [Color.accentColor, Color.purple]
+                        : [Color.white.opacity(0.35), Color.white.opacity(0.08)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
                     lineWidth: isTargeted ? 2.5 : 1
                 )
         )
-        .shadow(color: Color.black.opacity(0.2), radius: 16, x: 0, y: 8)
+        .shadow(color: Color.black.opacity(0.22), radius: 20, x: 0, y: 10)
         .quickLookPreview($previewUrl)
         .onDrop(of: [UTType.fileURL], isTargeted: $isTargeted) { providers in
             var loaded = false
@@ -176,44 +247,54 @@ struct ItemCardView: View {
                 Image(nsImage: item.thumbnail)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 36, height: 36)
-                    .cornerRadius(4)
-                    .shadow(color: Color.black.opacity(0.15), radius: 3, x: 0, y: 2)
+                    .frame(width: 38, height: 38)
+                    .cornerRadius(6)
+                    .shadow(color: Color.black.opacity(0.18), radius: 4, x: 0, y: 2)
                 
                 Text(item.name)
                     .font(.system(size: 10, weight: .medium))
                     .lineLimit(1)
                     .truncationMode(.middle)
-                    .foregroundColor(.primary)
+                    .foregroundColor(.primary.opacity(0.9))
             }
             .frame(width: 68, height: 68)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color.primary.opacity(isHovered ? 0.08 : 0.04))
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(isHovered ? 0.15 : 0.05),
+                                Color.primary.opacity(isHovered ? 0.08 : 0.02)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(Color.white.opacity(isHovered ? 0.2 : 0.05), lineWidth: 1)
+                    .stroke(Color.white.opacity(isHovered ? 0.3 : 0.08), lineWidth: 1)
             )
+            .scaleEffect(isHovered ? 1.04 : 1.0)
             
             // Hover action badges
             if isHovered {
-                HStack(spacing: 2) {
+                HStack(spacing: 3) {
                     Button(action: onPreview) {
                         Image(systemName: "eye.fill")
-                            .font(.system(size: 10))
-                            .foregroundColor(.gray)
+                            .font(.system(size: 9))
+                            .foregroundColor(.primary.opacity(0.8))
                             .frame(width: 18, height: 18)
-                            .background(Circle().fill(Color.white).shadow(color: .black.opacity(0.1), radius: 1, x: 0, y: 1))
+                            .background(Circle().fill(Color.white).shadow(color: .black.opacity(0.15), radius: 2, x: 0, y: 1))
                     }
                     .buttonStyle(.plain)
                     
                     Button(action: onRemove) {
                         Image(systemName: "xmark")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(.gray)
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(.primary.opacity(0.8))
                             .frame(width: 18, height: 18)
-                            .background(Circle().fill(Color.white).shadow(color: .black.opacity(0.1), radius: 1, x: 0, y: 1))
+                            .background(Circle().fill(Color.white).shadow(color: .black.opacity(0.15), radius: 2, x: 0, y: 1))
                     }
                     .buttonStyle(.plain)
                 }
@@ -222,7 +303,7 @@ struct ItemCardView: View {
             }
         }
         .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
+            withAnimation(.easeInOut(duration: 0.18)) {
                 isHovered = hovering
             }
         }

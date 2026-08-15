@@ -17,7 +17,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem?
     var dragDetector: DragDetector?
     var shelfManagers: [ShelfWindowManager] = []
-    private var shelfCounter = 1
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Setup status item directly via AppKit for guaranteed menu bar presence
@@ -34,6 +33,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self?.handleShake(at: location)
         }
         self.dragDetector?.startMonitoring()
+    }
+    
+    private func getNextDefaultTitle() -> String {
+        let existingTitles = Set(shelfManagers.map { $0.title })
+        var num = 1
+        while existingTitles.contains("Stash \(num)") {
+            num += 1
+        }
+        return "Stash \(num)"
     }
     
     func updateMenu() {
@@ -115,8 +123,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func spawnShelf(at location: NSPoint? = nil) {
-        let title = "Stash \(shelfCounter)"
-        shelfCounter += 1
+        let title = getNextDefaultTitle()
         
         let manager = ShelfWindowManager(
             title: title,

@@ -2,9 +2,9 @@ import AppKit
 import SwiftUI
 
 @MainActor
-class ShelfWindowManager {
+class ShelfWindowManager: ObservableObject {
     let id = UUID()
-    let title: String
+    @Published var title: String
     var panel: NSPanel?
     var isVisible = false
     var isEmpty = true
@@ -41,6 +41,14 @@ class ShelfWindowManager {
         panel.titlebarAppearsTransparent = true
         
         panel.contentView = NSHostingView(rootView: contentView)
+    }
+    
+    func updateTitle(_ newTitle: String) {
+        let trimmed = newTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty {
+            self.title = trimmed
+            onStateChange?()
+        }
     }
     
     func show(at point: NSPoint? = nil) {

@@ -4,13 +4,18 @@ import SwiftUI
 @MainActor
 class ShelfWindowManager {
     let id = UUID()
+    let title: String
     var panel: NSPanel?
     var isVisible = false
     var isEmpty = true
+    var itemCount: Int = 0
     var onClose: ((UUID) -> Void)?
+    var onStateChange: (() -> Void)?
     
-    init(onClose: @escaping (UUID) -> Void) {
+    init(title: String, onClose: @escaping (UUID) -> Void, onStateChange: @escaping () -> Void) {
+        self.title = title
         self.onClose = onClose
+        self.onStateChange = onStateChange
         setupPanel()
     }
     
@@ -62,11 +67,25 @@ class ShelfWindowManager {
         
         panel.orderFront(nil)
         isVisible = true
+        onStateChange?()
+    }
+    
+    func hide() {
+        panel?.orderOut(nil)
+        isVisible = false
+        onStateChange?()
     }
     
     func close() {
         panel?.orderOut(nil)
         isVisible = false
         onClose?(id)
+        onStateChange?()
+    }
+    
+    func updateItemCount(_ count: Int) {
+        self.itemCount = count
+        self.isEmpty = (count == 0)
+        onStateChange?()
     }
 }

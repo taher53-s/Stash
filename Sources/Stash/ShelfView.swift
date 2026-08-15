@@ -16,7 +16,7 @@ struct ShelfView: View {
                     Image(systemName: "tray.full.fill")
                         .font(.system(size: 12, weight: .bold))
                         .foregroundColor(.accentColor)
-                    Text("Stash")
+                    Text(manager.title)
                         .font(.system(size: 13, weight: .semibold, design: .rounded))
                         .foregroundColor(.primary)
                 }
@@ -27,7 +27,7 @@ struct ShelfView: View {
                     Button(action: {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                             items.removeAll()
-                            manager.isEmpty = true
+                            manager.updateItemCount(0)
                             manager.close()
                         }
                     }) {
@@ -40,7 +40,11 @@ struct ShelfView: View {
                 }
                 
                 Button(action: {
-                    manager.close()
+                    if items.isEmpty {
+                        manager.close()
+                    } else {
+                        manager.hide()
+                    }
                 }) {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 14))
@@ -134,8 +138,9 @@ struct ShelfView: View {
                             DispatchQueue.main.async {
                                 withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
                                     if !self.items.contains(where: { $0.url == url }) {
-                                        self.items.append(StashedItem(url: url))
-                                        self.manager.isEmpty = false
+                                        let newItem = StashedItem(url: url)
+                                        self.items.append(newItem)
+                                        self.manager.updateItemCount(self.items.count)
                                     }
                                 }
                             }
@@ -151,8 +156,8 @@ struct ShelfView: View {
     private func removeItem(_ item: StashedItem) {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             items.removeAll(where: { $0.id == item.id })
+            manager.updateItemCount(items.count)
             if items.isEmpty {
-                manager.isEmpty = true
                 manager.close()
             }
         }
@@ -160,7 +165,7 @@ struct ShelfView: View {
 }
 
 struct ItemCardView: View {
-    let item: StashedItem
+    @ObservedObject var item: StashedItem
     let onRemove: () -> Void
     let onPreview: () -> Void
     @State private var isHovered = false
@@ -168,10 +173,11 @@ struct ItemCardView: View {
     var body: some View {
         ZStack(alignment: .topTrailing) {
             VStack(spacing: 6) {
-                Image(nsImage: item.icon)
+                Image(nsImage: item.thumbnail)
                     .resizable()
                     .scaledToFit()
                     .frame(width: 36, height: 36)
+                    .cornerRadius(4)
                     .shadow(color: Color.black.opacity(0.15), radius: 3, x: 0, y: 2)
                 
                 Text(item.name)

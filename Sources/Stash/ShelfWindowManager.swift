@@ -3,10 +3,14 @@ import SwiftUI
 
 @MainActor
 class ShelfWindowManager {
+    let id = UUID()
     var panel: NSPanel?
     var isVisible = false
+    var isEmpty = true
+    var onClose: ((UUID) -> Void)?
     
-    init() {
+    init(onClose: @escaping (UUID) -> Void) {
+        self.onClose = onClose
         setupPanel()
     }
     
@@ -60,8 +64,9 @@ class ShelfWindowManager {
         isVisible = true
     }
     
-    func hide() {
+    func close() {
         panel?.orderOut(nil)
         isVisible = false
+        onClose?(id)
     }
 }

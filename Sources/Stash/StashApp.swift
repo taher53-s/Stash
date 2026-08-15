@@ -16,7 +16,7 @@ struct StashApp: App {
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem?
     var dragDetector: DragDetector?
-    var shelfManager: ShelfWindowManager?
+    var shelfManagers: [ShelfWindowManager] = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Setup status item directly via AppKit for guaranteed menu bar presence
@@ -30,7 +30,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "Toggle Shelf", action: #selector(toggleShelf), keyEquivalent: "s"))
+        menu.addItem(NSMenuItem(title: "New Shelf", action: #selector(createNewShelf), keyEquivalent: "n"))
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Quit Stash", action: #selector(quitApp), keyEquivalent: "q"))
         statusItem?.menu = menu
@@ -38,21 +38,36 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Request accessibility permissions silently on launch if needed
         let options: NSDictionary = ["AXTrustedCheckOptionPrompt": true]
         let accessEnabled = AXIsProcessTrustedWithOptions(options)
-        
         print("Accessibility Enabled: \(accessEnabled)")
         
-        self.shelfManager = ShelfWindowManager()
-        self.dragDetector = DragDetector(shelfManager: self.shelfManager!)
+        self.dragDetector = DragDetector()
+        self.dragDetector?.onShakeDetected = { [weak self] location in
+            self?.handleShake(at: location)
+        }
         self.dragDetector?.startMonitoring()
     }
     
-    @objc func toggleShelf() {
-        if shelfManager?.isVisible == true {
-            shelfManager?.hide()
+    func handleShake(at location: NSPoint) {
+        // Find an empty shelf that is not visible, or just the first empty one
+        if let emptyShelf = shelfManagers.first(where: { $0.isEmpty }) {
+            emptyShelf.show(at: location)
         } else {
-            let mouseLocation = NSEvent.mouseLocation
-            shelfManager?.show(at: mouseLocation)
+            // Spawn a new shelf window
+            spawnShelf(at: location)
         }
+    }
+    
+    @objc func createNewShelf() {
+        let mouseLocation = NSEvent.mouseLocation
+        spawnShelf(at: mouseLocation)
+    }
+    
+    func spawnShelf(at location: NSPoint? = nil) {
+        let manager = ShelfWindowManager(onClose: { [weak self] id in
+            self?.shelfManagers.removeAll(where: { $0.id == id })
+        })
+        shelfManagers.append(manager)
+        manager.show(at: location)
     }
     
     @objc func quitApp() {

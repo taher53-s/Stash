@@ -4,7 +4,7 @@ import AppKit
 class DragDetector {
     var globalMonitor: Any?
     var localMonitor: Any?
-    let shelfManager: ShelfWindowManager
+    var onShakeDetected: ((NSPoint) -> Void)?
     
     // Shake detection state
     private var lastMousePositions: [NSPoint] = []
@@ -13,9 +13,7 @@ class DragDetector {
     private let directionChangesRequired = 2
     private let maxTimeBetweenShakes: TimeInterval = 0.6
     
-    init(shelfManager: ShelfWindowManager) {
-        self.shelfManager = shelfManager
-    }
+    init() {}
     
     func startMonitoring() {
         // Track global left mouse drags
@@ -41,9 +39,6 @@ class DragDetector {
     }
     
     private func handleMouseDragged(event: NSEvent) {
-        // Only trigger if shelf is not already visible
-        guard !shelfManager.isVisible else { return }
-        
         let mouseLocation = NSEvent.mouseLocation
         let currentTime = Date().timeIntervalSince1970
         
@@ -62,7 +57,7 @@ class DragDetector {
         
         if detectShake(positions: lastMousePositions) {
             print("Shake detected!")
-            shelfManager.show(at: mouseLocation)
+            onShakeDetected?(mouseLocation)
             resetShakeDetection()
         }
     }

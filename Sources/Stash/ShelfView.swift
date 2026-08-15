@@ -1,10 +1,12 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import QuickLook
 
 struct ShelfView: View {
     let manager: ShelfWindowManager
     @State private var items: [StashedItem] = []
     @State private var isTargeted = false
+    @State private var previewUrl: URL?
     
     var body: some View {
         VStack(spacing: 10) {
@@ -25,7 +27,8 @@ struct ShelfView: View {
                     Button(action: {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                             items.removeAll()
-                            manager.hide()
+                            manager.isEmpty = true
+                            manager.close()
                         }
                     }) {
                         Text("Clear")
@@ -37,7 +40,7 @@ struct ShelfView: View {
                 }
                 
                 Button(action: {
-                    manager.hide()
+                    manager.close()
                 }) {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 14))
@@ -77,6 +80,8 @@ struct ShelfView: View {
                         ForEach(items) { item in
                             ItemCardView(item: item, onRemove: {
                                 removeItem(item)
+                            }, onPreview: {
+                                previewUrl = item.url
                             })
                             .onDrag {
                                 NSItemProvider(item: item.url as NSSecureCoding, typeIdentifier: UTType.fileURL.identifier)
@@ -112,11 +117,12 @@ struct ShelfView: View {
                 )
         )
         .shadow(color: Color.black.opacity(0.2), radius: 16, x: 0, y: 8)
-        .onDrop(of: [.fileURL], isTargeted: $isTargeted) { providers in
+        .quickLookPreview($previewUrl)
+        .onDrop(of: [UTType.fileURL], isTargeted: $isTargeted) { providers in
             var loaded = false
             for provider in providers {
                 if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
-                    provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { (item, error) in
+                    provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil as [AnyHashable: Any]?) { (item, error) in
                         var targetURL: URL?
                         if let data = item as? Data {
                             targetURL = URL(dataRepresentation: data, relativeTo: nil)
@@ -129,6 +135,7 @@ struct ShelfView: View {
                                 withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
                                     if !self.items.contains(where: { $0.url == url }) {
                                         self.items.append(StashedItem(url: url))
+                                        self.manager.isEmpty = false
                                     }
                                 }
                             }
@@ -145,7 +152,8 @@ struct ShelfView: View {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             items.removeAll(where: { $0.id == item.id })
             if items.isEmpty {
-                manager.hide()
+                manager.isEmpty = true
+                manager.close()
             }
         }
     }
@@ -154,6 +162,7 @@ struct ShelfView: View {
 struct ItemCardView: View {
     let item: StashedItem
     let onRemove: () -> Void
+    let onPreview: () -> Void
     @State private var isHovered = false
     
     var body: some View {
@@ -181,15 +190,27 @@ struct ItemCardView: View {
                     .stroke(Color.white.opacity(isHovered ? 0.2 : 0.05), lineWidth: 1)
             )
             
-            // Hover remove badge
+            // Hover action badges
             if isHovered {
-                Button(action: onRemove) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 13))
-                        .foregroundColor(.gray)
-                        .background(Circle().fill(Color.white))
+                HStack(spacing: 2) {
+                    Button(action: onPreview) {
+                        Image(systemName: "eye.fill")
+                            .font(.system(size: 10))
+                            .foregroundColor(.gray)
+                            .frame(width: 18, height: 18)
+                            .background(Circle().fill(Color.white).shadow(color: .black.opacity(0.1), radius: 1, x: 0, y: 1))
+                    }
+                    .buttonStyle(.plain)
+                    
+                    Button(action: onRemove) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.gray)
+                            .frame(width: 18, height: 18)
+                            .background(Circle().fill(Color.white).shadow(color: .black.opacity(0.1), radius: 1, x: 0, y: 1))
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
                 .offset(x: 4, y: -4)
                 .transition(.scale.combined(with: .opacity))
             }
@@ -198,6 +219,9 @@ struct ItemCardView: View {
             withAnimation(.easeInOut(duration: 0.15)) {
                 isHovered = hovering
             }
+        }
+        .onTapGesture(count: 2) {
+            onPreview()
         }
     }
 }

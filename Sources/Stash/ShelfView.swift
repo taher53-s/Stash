@@ -30,11 +30,11 @@ struct ShelfView: View {
                             .padding(.vertical, 3)
                             .background(
                                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                    .fill(Color.primary.opacity(0.08))
+                                    .fill(Color.primary.opacity(0.12))
                             )
                             .overlay(
                                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                    .stroke(Color.accentColor.opacity(0.6), lineWidth: 1)
+                                    .stroke(Color.accentColor.opacity(0.8), lineWidth: 1)
                             )
                             .frame(maxWidth: 120)
                             .onSubmit {
@@ -57,9 +57,12 @@ struct ShelfView: View {
                                 .foregroundColor(.secondary.opacity(0.5))
                         }
                         .onTapGesture {
+                            manager.makeKey()
                             editableTitle = manager.title
                             isEditingTitle = true
-                            isTitleFocused = true
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                                isTitleFocused = true
+                            }
                         }
                         .help("Click to rename shelf")
                     }
@@ -112,7 +115,7 @@ struct ShelfView: View {
                     ZStack {
                         Circle()
                             .fill(Color.accentColor.opacity(0.08))
-                            .frame(width: 56, height: 56)
+                            .frame(width: 54, height: 54)
                             .overlay(
                                 Circle()
                                     .stroke(Color.white.opacity(0.2), lineWidth: 1)
@@ -155,15 +158,15 @@ struct ShelfView: View {
         .frame(width: 240, height: 260)
         .background(
             ZStack {
-                // Pure Apple ultra-thin frosted glass background
+                // Pure translucent material
                 Rectangle()
-                    .fill(.ultraThinMaterial)
+                    .fill(.regularMaterial)
                 
-                // Subtle top-to-bottom translucent specular reflection
+                // Translucent top highlight
                 LinearGradient(
                     colors: [
-                        Color.white.opacity(0.2),
-                        Color.white.opacity(0.03)
+                        Color.white.opacity(0.15),
+                        Color.white.opacity(0.02)
                     ],
                     startPoint: .top,
                     endPoint: .bottom
@@ -176,11 +179,11 @@ struct ShelfView: View {
                 .stroke(
                     isTargeted
                     ? Color.accentColor
-                    : Color.white.opacity(0.3),
+                    : Color.white.opacity(0.25),
                     lineWidth: isTargeted ? 2.5 : 1
                 )
         )
-        .shadow(color: Color.black.opacity(0.2), radius: 20, x: 0, y: 8)
+        .shadow(color: Color.black.opacity(0.2), radius: 18, x: 0, y: 8)
         .quickLookPreview($previewUrl)
         .onDrop(of: [UTType.fileURL], isTargeted: $isTargeted) { providers in
             var loaded = false
@@ -240,11 +243,12 @@ struct ItemCardView: View {
         ZStack(alignment: .topTrailing) {
             VStack(spacing: 6) {
                 Image(nsImage: item.thumbnail)
+                    .renderingMode(.original)
                     .resizable()
                     .scaledToFit()
                     .frame(width: 38, height: 38)
                     .cornerRadius(6)
-                    .shadow(color: Color.black.opacity(0.18), radius: 4, x: 0, y: 2)
+                    .shadow(color: Color.black.opacity(0.15), radius: 3, x: 0, y: 2)
                 
                 Text(item.name)
                     .font(.system(size: 10, weight: .medium))
@@ -255,20 +259,11 @@ struct ItemCardView: View {
             .frame(width: 68, height: 68)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color.white.opacity(isHovered ? 0.16 : 0.05),
-                                Color.primary.opacity(isHovered ? 0.06 : 0.02)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                    .fill(Color.primary.opacity(isHovered ? 0.08 : 0.04))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(Color.white.opacity(isHovered ? 0.35 : 0.1), lineWidth: 1)
+                    .stroke(Color.white.opacity(isHovered ? 0.25 : 0.08), lineWidth: 1)
             )
             .scaleEffect(isHovered ? 1.03 : 1.0)
             

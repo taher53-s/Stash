@@ -1,11 +1,16 @@
 import AppKit
 import SwiftUI
 
+class StashPanel: NSPanel {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { true }
+}
+
 @MainActor
 class ShelfWindowManager: ObservableObject {
     let id = UUID()
     @Published var title: String
-    var panel: NSPanel?
+    var panel: StashPanel?
     var isVisible = false
     var isEmpty = true
     var itemCount: Int = 0
@@ -22,7 +27,7 @@ class ShelfWindowManager: ObservableObject {
     func setupPanel() {
         let contentView = ShelfView(manager: self)
         
-        panel = NSPanel(
+        panel = StashPanel(
             contentRect: NSRect(x: 0, y: 0, width: 240, height: 260),
             styleMask: [.nonactivatingPanel, .fullSizeContentView, .hudWindow],
             backing: .buffered,
@@ -37,6 +42,7 @@ class ShelfWindowManager: ObservableObject {
         panel.isOpaque = false
         panel.hasShadow = true
         panel.isFloatingPanel = true
+        panel.becomesKeyOnlyIfNeeded = true
         panel.titleVisibility = .hidden
         panel.titlebarAppearsTransparent = true
         
@@ -49,6 +55,10 @@ class ShelfWindowManager: ObservableObject {
             self.title = trimmed
             onStateChange?()
         }
+    }
+    
+    func makeKey() {
+        panel?.makeKey()
     }
     
     func show(at point: NSPoint? = nil) {

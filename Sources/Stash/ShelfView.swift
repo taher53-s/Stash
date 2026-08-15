@@ -9,6 +9,7 @@ struct ShelfView: View {
     @State private var previewUrl: URL?
     @State private var isEditingTitle = false
     @State private var editableTitle = ""
+    @FocusState private var isTitleFocused: Bool
     
     var body: some View {
         VStack(spacing: 8) {
@@ -17,33 +18,37 @@ struct ShelfView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "tray.full.fill")
                         .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.accentColor, .purple.opacity(0.8)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .foregroundColor(.accentColor)
                     
                     if isEditingTitle {
-                        TextField("Shelf Name", text: $editableTitle, onCommit: {
-                            manager.updateTitle(editableTitle)
-                            isEditingTitle = false
-                        })
-                        .textFieldStyle(.plain)
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .foregroundColor(.primary)
-                        .padding(.horizontal, 4)
-                        .padding(.vertical, 2)
-                        .background(
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(Color.primary.opacity(0.1))
-                        )
-                        .frame(maxWidth: 110)
+                        TextField("Shelf Name", text: $editableTitle)
+                            .textFieldStyle(.plain)
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.primary)
+                            .focused($isTitleFocused)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(
+                                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                    .fill(Color.primary.opacity(0.08))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                    .stroke(Color.accentColor.opacity(0.6), lineWidth: 1)
+                            )
+                            .frame(maxWidth: 120)
+                            .onSubmit {
+                                commitTitle()
+                            }
+                            .onChange(of: isTitleFocused) { _, focused in
+                                if !focused {
+                                    commitTitle()
+                                }
+                            }
                     } else {
                         HStack(spacing: 4) {
                             Text(manager.title)
-                                .font(.system(size: 12, weight: .bold, design: .rounded))
+                                .font(.system(size: 12, weight: .bold))
                                 .foregroundColor(.primary)
                                 .lineLimit(1)
                             
@@ -54,6 +59,7 @@ struct ShelfView: View {
                         .onTapGesture {
                             editableTitle = manager.title
                             isEditingTitle = true
+                            isTitleFocused = true
                         }
                         .help("Click to rename shelf")
                     }
@@ -63,7 +69,7 @@ struct ShelfView: View {
                 
                 if !items.isEmpty {
                     Text("\(items.count)")
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .font(.system(size: 10, weight: .bold))
                         .foregroundColor(.secondary)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
@@ -105,13 +111,7 @@ struct ShelfView: View {
                     Spacer()
                     ZStack {
                         Circle()
-                            .fill(
-                                LinearGradient(
-                                    colors: [Color.accentColor.opacity(0.12), Color.purple.opacity(0.06)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
+                            .fill(Color.accentColor.opacity(0.08))
                             .frame(width: 56, height: 56)
                             .overlay(
                                 Circle()
@@ -120,17 +120,11 @@ struct ShelfView: View {
                         
                         Image(systemName: "tray.and.arrow.down.fill")
                             .font(.system(size: 22, weight: .medium))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [.accentColor, .purple.opacity(0.9)],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                            )
+                            .foregroundColor(.accentColor)
                     }
                     
                     Text("Drop Files Here")
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(.primary.opacity(0.85))
                     
                     Text("Shake cursor anytime to stash")
@@ -161,37 +155,32 @@ struct ShelfView: View {
         .frame(width: 240, height: 260)
         .background(
             ZStack {
-                // Base frosted glass material
+                // Pure Apple ultra-thin frosted glass background
                 Rectangle()
                     .fill(.ultraThinMaterial)
                 
-                // Subtle liquid light background ambient glow
+                // Subtle top-to-bottom translucent specular reflection
                 LinearGradient(
                     colors: [
-                        Color.white.opacity(0.22),
-                        Color.accentColor.opacity(0.06),
-                        Color.purple.opacity(0.04)
+                        Color.white.opacity(0.2),
+                        Color.white.opacity(0.03)
                     ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
+                    startPoint: .top,
+                    endPoint: .bottom
                 )
             }
         )
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .stroke(
-                    LinearGradient(
-                        colors: isTargeted
-                        ? [Color.accentColor, Color.purple]
-                        : [Color.white.opacity(0.35), Color.white.opacity(0.08)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
+                    isTargeted
+                    ? Color.accentColor
+                    : Color.white.opacity(0.3),
                     lineWidth: isTargeted ? 2.5 : 1
                 )
         )
-        .shadow(color: Color.black.opacity(0.22), radius: 20, x: 0, y: 10)
+        .shadow(color: Color.black.opacity(0.2), radius: 20, x: 0, y: 8)
         .quickLookPreview($previewUrl)
         .onDrop(of: [UTType.fileURL], isTargeted: $isTargeted) { providers in
             var loaded = false
@@ -222,6 +211,12 @@ struct ShelfView: View {
             }
             return loaded
         }
+    }
+    
+    private func commitTitle() {
+        guard isEditingTitle else { return }
+        manager.updateTitle(editableTitle)
+        isEditingTitle = false
     }
     
     private func removeItem(_ item: StashedItem) {
@@ -263,8 +258,8 @@ struct ItemCardView: View {
                     .fill(
                         LinearGradient(
                             colors: [
-                                Color.white.opacity(isHovered ? 0.15 : 0.05),
-                                Color.primary.opacity(isHovered ? 0.08 : 0.02)
+                                Color.white.opacity(isHovered ? 0.16 : 0.05),
+                                Color.primary.opacity(isHovered ? 0.06 : 0.02)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -273,9 +268,9 @@ struct ItemCardView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(Color.white.opacity(isHovered ? 0.3 : 0.08), lineWidth: 1)
+                    .stroke(Color.white.opacity(isHovered ? 0.35 : 0.1), lineWidth: 1)
             )
-            .scaleEffect(isHovered ? 1.04 : 1.0)
+            .scaleEffect(isHovered ? 1.03 : 1.0)
             
             // Hover action badges
             if isHovered {

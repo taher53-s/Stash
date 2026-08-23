@@ -7,6 +7,15 @@ class StashedItem: Identifiable, ObservableObject {
     let url: URL
     let name: String
     @Published var thumbnail: NSImage
+
+    var fileSizeDescription: String {
+        guard let size = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize else { return "Local file" }
+        return ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file)
+    }
+
+    var kindDescription: String {
+        (try? url.resourceValues(forKeys: [.localizedTypeDescriptionKey]))?.localizedTypeDescription ?? "File"
+    }
     
     init(url: URL) {
         self.url = url

@@ -28,7 +28,7 @@ class ShelfWindowManager: ObservableObject {
         let contentView = ShelfView(manager: self)
         
         panel = StashPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 240, height: 260),
+            contentRect: NSRect(x: 0, y: 0, width: 304, height: 326),
             styleMask: [.nonactivatingPanel, .fullSizeContentView, .hudWindow],
             backing: .buffered,
             defer: false
@@ -36,7 +36,7 @@ class ShelfWindowManager: ObservableObject {
         
         guard let panel = panel else { return }
         
-        panel.level = .floating // Stays above other windows
+        panel.level = (UserDefaults.standard.object(forKey: "stash.keepShelvesOnTop") as? Bool ?? true) ? .floating : .normal
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary]
         panel.backgroundColor = NSColor.clear
         panel.isOpaque = false
@@ -66,7 +66,7 @@ class ShelfWindowManager: ObservableObject {
         
         if let point = point {
             // Position the window near the mouse, smoothly centered relative to cursor
-            var newOrigin = NSPoint(x: point.x + 15, y: point.y - 130)
+            var newOrigin = NSPoint(x: point.x + 16, y: point.y - 163)
             
             // Screen bounds safety check
             if let screen = NSScreen.screens.first(where: { NSMouseInRect(point, $0.frame, false) }) {

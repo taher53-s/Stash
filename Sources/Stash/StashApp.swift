@@ -7,7 +7,7 @@ struct StashApp: App {
     
     var body: some Scene {
         Settings {
-            EmptyView()
+            StashSettingsView()
         }
     }
 }
@@ -46,16 +46,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     func updateMenu() {
         if let button = statusItem?.button {
+            let showItemCount = UserDefaults.standard.object(forKey: "stash.showItemCount") as? Bool ?? true
             let activeCount = shelfManagers.filter({ !$0.isEmpty }).count
-            if activeCount > 0 {
-                button.title = "📦 Stash (\(activeCount))"
+            if activeCount > 0 && showItemCount {
+                button.title = "Stash \(activeCount)"
                 button.image = nil
             } else {
                 if let image = NSImage(systemSymbolName: "archivebox.fill", accessibilityDescription: "Stash") {
+                    image.isTemplate = true
                     button.image = image
                     button.title = ""
                 } else {
-                    button.title = "📦 Stash"
+                    button.title = "Stash"
                 }
             }
         }
@@ -63,13 +65,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         
         // List active non-empty shelves
-        let nonEmpthShelves = shelfManagers.filter { !$0.isEmpty }
-        if !nonEmpthShelves.isEmpty {
+        let nonEmptyShelves = shelfManagers.filter { !$0.isEmpty }
+        if !nonEmptyShelves.isEmpty {
             let headerItem = NSMenuItem(title: "Active Shelves", action: nil, keyEquivalent: "")
             headerItem.isEnabled = false
             menu.addItem(headerItem)
             
-            for manager in shelfManagers {
+            for manager in nonEmptyShelves {
                 let statusText = manager.isVisible ? "Visible" : "Hidden"
                 let title = "  \(manager.title) (\(manager.itemCount) items) [\(statusText)]"
                 let menuItem = NSMenuItem(title: title, action: #selector(shelfMenuItemClicked(_:)), keyEquivalent: "")
@@ -85,6 +87,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             menu.addItem(NSMenuItem(title: "Close All Shelves", action: #selector(closeAllShelves), keyEquivalent: "w"))
         }
         menu.addItem(NSMenuItem.separator())
+        menu.addItem(NSMenuItem(title: "Settings…", action: #selector(showSettings), keyEquivalent: ","))
         menu.addItem(NSMenuItem(title: "Quit Stash", action: #selector(quitApp), keyEquivalent: "q"))
         
         statusItem?.menu = menu
@@ -146,6 +149,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         shelfManagers.removeAll()
         updateMenu()
+    }
+
+    @objc func showSettings() {
+        NSApp.activate(ignoringOtherApps: true)
+        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
     }
     
     @objc func quitApp() {

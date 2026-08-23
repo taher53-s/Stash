@@ -9,7 +9,7 @@ class DragDetector {
     // Shake detection state
     private var lastMousePositions: [NSPoint] = []
     private var lastEventTime: TimeInterval = 0
-    private let shakeThreshold: CGFloat = 300.0 // Distance threshold for a single "shake" stroke
+    private let minimumStrokeDistance: CGFloat = 42.0
     private let directionChangesRequired = 2
     private let maxTimeBetweenShakes: TimeInterval = 0.6
     
@@ -50,8 +50,8 @@ class DragDetector {
         lastEventTime = currentTime
         lastMousePositions.append(mouseLocation)
         
-        // Keep only the last N positions to avoid unbounded growth
-        if lastMousePositions.count > 30 {
+        // Keep only recent motion so a long slow drag cannot become a false shake.
+        if lastMousePositions.count > 24 {
             lastMousePositions.removeFirst()
         }
         
@@ -90,7 +90,7 @@ class DragDetector {
                 distanceInCurrentDirection += abs(dx)
             } else {
                 // Direction changed!
-                if distanceInCurrentDirection > 15 { // Minimal distance to count as a real stroke
+                if distanceInCurrentDirection >= minimumStrokeDistance {
                     directionChanges += 1
                 }
                 currentDirectionX = newDirectionX

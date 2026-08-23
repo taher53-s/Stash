@@ -1,0 +1,61 @@
+name: macOS Build and Validate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Sources/**"
+      - "Package.swift"
+      - "Scripts/**"
+      - ".github/workflows/macos-build.yml"
+  pull_request:
+    paths:
+      - "Sources/**"
+      - "Package.swift"
+      - "Scripts/**"
+      - ".github/workflows/macos-build.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-validate:
+    name: Build Stash.app on macOS
+    runs-on: macos-14
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Report Xcode and Swift versions
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Resolve package dependencies
+        run: swift package resolve
+
+      - name: Build release executable
+        run: swift build -c release --arch arm64
+
+      - name: Assemble unsigned Stash.app
+        env:
+          ARCH: arm64
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: ./Scripts/build_app.sh
+
+      - name: Validate application bundle
+        run: |
+          plutil -lint dist/Stash.app/Contents/Info.plist
+          codesign --force --sign - --deep --timestamp=none dist/Stash.app
+          ./Scripts/smoke_test_app.sh
+
+      - name: Upload built app bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: Stash-macOS-unsigned-${{ github.run_number }}
+          path: dist/Stash.app
+          if-no-files-found: error
+          retention-days: 14

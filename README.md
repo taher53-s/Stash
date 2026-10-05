@@ -12,7 +12,7 @@ Drag files from anywhere, "shake" your mouse, and the Stash shelf will appear. D
 
 ## Installation
 
-Download the latest release from the [Releases](https://github.com/) tab and drag `Stash.app` to your Applications folder.
+Download the latest release from the [Releases](https://github.com/taher53-s/Stash/releases) tab and drag `Stash.app` to your Applications folder.
 
 ### Important: Accessibility Permissions
 Because Stash needs to detect mouse dragging across the entire system, macOS requires you to grant it Accessibility permissions.
